@@ -97,7 +97,7 @@
       list: [],
       total: 0,
       pageNo: 1,
-      pageSize: 1,
+      pageSize: 8,
     },
   });
 
@@ -128,7 +128,7 @@
     state.loadStatus = 'loading';
     let { code, data } = await BrokerageApi.getBrokerageRecordPage({
       pageSize: state.pagination.pageSize,
-      pageNo: state.pagination.pageSize,
+      pageNo: state.pagination.pageNo,
       bizType: 1, // 获得推广佣金
       status: state.currentTab > 0 ? state.currentTab : undefined,
     });
