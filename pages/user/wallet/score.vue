@@ -36,7 +36,7 @@
           </button>
         </uni-datetime-picker>
 
-        <!-- TODO 芋艿：【钱包】可优化 -->
+        <!-- TODO 芋艿：【钱包-可优化】展示一下 -->
         <!--				<view class="total-box">-->
         <!--					<view class="ss-m-b-10">总收入￥{{ state.pagination.income }}</view>-->
         <!--					<view>总支出￥{{ -state.pagination.expense }}</view>-->
@@ -88,10 +88,10 @@
   import sheep from '@/sheep';
   import { onLoad, onReachBottom } from '@dcloudio/uni-app';
   import { computed, reactive } from 'vue';
-  import _ from 'lodash-es';
+  import { concat } from 'lodash-es';
   import dayjs from 'dayjs';
   import PointApi from '@/sheep/api/member/point';
-  import { resetPagination } from '@/sheep/util';
+  import { resetPagination } from '@/sheep/helper/utils';
 
   const statusBarHeight = sheep.$platform.device.statusBarHeight * 2;
   const userInfo = computed(() => sheep.$store('user').userInfo);
@@ -145,7 +145,7 @@
     if (code !== 0) {
       return;
     }
-    state.pagination.list = _.concat(state.pagination.list, data.list);
+    state.pagination.list = concat(state.pagination.list, data.list);
     state.pagination.total = data.total;
     state.loadStatus = state.pagination.list.length < state.pagination.total ? 'more' : 'noMore';
   }

@@ -1,6 +1,6 @@
 <!-- 秒杀活动列表 -->
 <template>
-  <s-layout navbar="inner" :bgStyle="{ color: 'rgb(245,28,19)' }">
+  <s-layout :bgStyle="{ color: 'rgb(245,28,19)' }" navbar="inner">
     <!--顶部背景图-->
     <view
       class="page-bg"
@@ -28,10 +28,9 @@
     <view class="flex align-center justify-between ss-p-25">
       <!-- 左侧图标 -->
       <view class="time-icon">
-        <!-- TODO 芋艿：图片统一维护 -->
         <image
           class="ss-w-100 ss-h-100"
-          src="http://mall.yudao.iocoder.cn/static/images/priceTag.png"
+          :src="sheep.$url.static('/static/img/shop/priceTag.png')"
         />
       </view>
       <scroll-view
@@ -146,13 +145,13 @@
   </s-layout>
 </template>
 <script setup>
-  import { reactive, computed, ref, nextTick } from 'vue';
+  import { computed, nextTick, reactive, ref } from 'vue';
   import { onLoad, onReachBottom } from '@dcloudio/uni-app';
   import sheep from '@/sheep';
   import { useDurationTime } from '@/sheep/hooks/useGoods';
   import SeckillApi from '@/sheep/api/promotion/seckill';
   import dayjs from 'dayjs';
-  import { TimeStatusEnum } from '@/sheep/util/const';
+  import { TimeStatusEnum } from '@/sheep/helper/const';
 
   // 计算页面高度
   const { safeAreaInsets, safeArea } = sheep.$platform.device;

@@ -64,14 +64,14 @@
   import sheep from '@/sheep';
   import { onLoad, onReachBottom } from '@dcloudio/uni-app';
   import { reactive } from 'vue';
-  import _ from 'lodash-es';
+  import { concat } from 'lodash-es';
   import {
     formatAfterSaleStatus,
     formatAfterSaleStatusDescription,
     handleAfterSaleButtons,
   } from '@/sheep/hooks/useGoods';
   import AfterSaleApi from '@/sheep/api/trade/afterSale';
-  import { resetPagination } from '@/sheep/util';
+  import { resetPagination } from '@/sheep/helper/utils';
 
   const state = reactive({
     currentTab: 0,
@@ -85,28 +85,27 @@
     loadStatus: '',
   });
 
-  // TODO 芋艿：优化点，增加筛选
   const tabMaps = [
     {
       name: '全部',
-      value: 'all',
+      value: [],
     },
-    // {
-    //   name: '申请中',
-    //   value: 'nooper',
-    // },
-    // {
-    //   name: '处理中',
-    //   value: 'ing',
-    // },
-    // {
-    //   name: '已完成',
-    //   value: 'completed',
-    // },
-    // {
-    //   name: '已拒绝',
-    //   value: 'refuse',
-    // },
+    {
+      name: '申请中',
+      value: [10],
+    },
+    {
+      name: '处理中',
+      value: [20, 30, 40],
+    },
+    {
+      name: '已完成',
+      value: [50],
+    },
+    {
+      name: '已拒绝',
+      value: [61, 62, 63],
+    },
   ];
 
   // 切换选项卡
@@ -120,15 +119,15 @@
   async function getOrderList() {
     state.loadStatus = 'loading';
     let { data, code } = await AfterSaleApi.getAfterSalePage({
-      // type: tabMaps[state.currentTab].value,
       pageNo: state.pagination.pageNo,
       pageSize: state.pagination.pageSize,
+      statuses: tabMaps[state.currentTab].value.join(','),
     });
     if (code !== 0) {
       return;
     }
     data.list.forEach((order) => handleAfterSaleButtons(order));
-    state.pagination.list = _.concat(state.pagination.list, data.list);
+    state.pagination.list = concat(state.pagination.list, data.list);
     state.pagination.total = data.total;
     state.loadStatus = state.pagination.list.length < state.pagination.total ? 'more' : 'noMore';
   }

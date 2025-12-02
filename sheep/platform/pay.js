@@ -93,7 +93,7 @@ export default class SheepPay {
       };
       // 特殊逻辑：微信公众号、小程序支付时，必须传入 openid
       if (['wx_pub', 'wx_lite'].includes(channel)) {
-        const openid = await sheep.$platform.useProvider('wechat').getOpenid();
+        const openid = await sheep.$platform.useProvider('wechat').getOpenid(true);
         // 如果获取不到 openid，微信无法发起支付，此时需要引导
         if (!openid) {
           this.bindWeixin();
@@ -228,44 +228,72 @@ export default class SheepPay {
     });
   }
 
-  // 支付宝支付（App） TODO 芋艿：待接入【暂时没打包 app，所以没接入，一般人用不到】
+  // 支付宝支付（App）
   async alipay() {
     let that = this;
-    const { error, data } = await this.prepay();
-    if (error === 0) {
-      uni.requestPayment({
-        provider: 'alipay',
-        orderInfo: data.pay_data, //支付宝订单数据
-        success: (res) => {
-          that.payResult('success');
-        },
-        fail: (err) => {
-          if (err.errMsg === 'requestPayment:fail [paymentAlipay:62001]user cancel') {
-            sheep.$helper.toast('支付已手动取消');
-          } else {
-            that.payResult('fail');
-          }
-        },
-      });
+    const { code, data } = await this.prepay('alipay_app');
+    if (code !== 0) {
+      return;
     }
+
+    // TODO @芋艿：【可优化】如果是沙箱支付，EnvUtils.setEnv(EnvUtils.EnvEnum.SANDBOX)，相关 https://t.zsxq.com/yjyJQ
+    uni.requestPayment({
+      provider: 'alipay',
+      orderInfo: data.displayContent, // 直接使用返回的支付参数
+      success: (res) => {
+        that.payResult('success');
+      },
+      fail: (err) => {
+        if (err.errMsg === 'requestPayment:fail [paymentAlipay:62001]user cancel') {
+          sheep.$helper.toast('支付已手动取消');
+        } else {
+          that.payResult('fail');
+        }
+      },
+    });
   }
 
-  // 微信支付（App）  TODO 芋艿：待接入：待接入【暂时没打包 app，所以没接入，一般人用不到】
+  // 微信支付（App）
   async wechatAppPay() {
     let that = this;
-    let { error, data } = await this.prepay();
-    if (error === 0) {
-      uni.requestPayment({
-        provider: 'wxpay',
-        orderInfo: data.pay_data, //微信订单数据(官方说是string。实测为object)
-        success: (res) => {
-          that.payResult('success');
-        },
-        fail: (err) => {
-          err.errMsg !== 'requestPayment:fail cancel' && that.payResult('fail');
-        },
-      });
+    // 获取预支付信息
+    let { code, data } = await this.prepay('wx_app');
+    if (code !== 0) {
+      sheep.$helper.toast('获取支付信息失败');
+      return;
     }
+
+    // 解析支付参数
+    let payConfig = JSON.parse(data.displayContent);
+    if(typeof payConfig.appId === 'undefined'){
+      payConfig.appId = payConfig.appid;
+    }
+    if(typeof payConfig.nonceStr === 'undefined'){
+      payConfig.nonceStr = payConfig.noncestr;
+    }
+    if(typeof payConfig.timeStamp === 'undefined'){
+      payConfig.timeStamp = payConfig.timestamp;
+    }
+    // 调用微信支付
+    uni.requestPayment({
+      provider: 'wxpay',
+      timeStamp: payConfig.timeStamp,
+      nonceStr: payConfig.nonceStr,
+      package: payConfig.packageValue,
+      signType: payConfig.signType,
+      paySign: payConfig.paySign,
+      success: (res) => {
+        that.payResult('success');
+      },
+      fail: (err) => {
+        if (err.errMsg === 'requestPayment:fail cancel') {
+          sheep.$helper.toast('支付已手动取消');
+        } else {
+          sheep.$helper.toast('支付失败：' + err.errMsg);
+          that.payResult('fail');
+        }
+      },
+    });
   }
 
   // 支付结果跳转,success:成功，fail:失败
@@ -275,15 +303,7 @@ export default class SheepPay {
 
   // 引导绑定微信
   bindWeixin() {
-    uni.showModal({
-      title: '微信支付',
-      content: '请先绑定微信再使用微信支付',
-      success: function (res) {
-        if (res.confirm) {
-          sheep.$platform.useProvider('wechat').bind();
-        }
-      },
-    });
+    goBindWeixin();
   }
 }
 
@@ -363,4 +383,33 @@ export function goPayResult(id, orderType, resultType) {
     orderType,
     payState: resultType,
   });
+}
+
+export function goBindWeixin() {
+  uni.showModal({
+    title: '微信支付',
+    content: '请先绑定微信再使用微信支付',
+    success: function (res) {
+      if (res.confirm) {
+        sheep.$platform.useProvider('wechat').bind();
+      }
+    },
+  });
+}
+
+// 获取微信支付渠道码
+export function getWeixinPayChannelCode() {
+  const platform = sheep.$platform.name;
+  switch (platform) {
+    case 'WechatOfficialAccount':
+      return 'wx_pub';
+    case 'WechatMiniProgram':
+      return 'wx_lite';
+    case 'App':
+      return 'wx_app';
+    case 'H5':
+      return 'wx_wap';
+    default:
+      return '';
+  }
 }

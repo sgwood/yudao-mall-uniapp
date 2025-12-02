@@ -159,6 +159,7 @@
   import { useDurationTime, formatGoodsSwiper, fen2yuan } from '@/sheep/hooks/useGoods';
   import CombinationApi from '@/sheep/api/promotion/combination';
   import SpuApi from '@/sheep/api/product/spu';
+  import { SharePageEnum } from '@/sheep/helper/const';
 
   const headerBg = sheep.$url.css('/static/img/shop/goods/groupon-bg.png');
   const btnBg = sheep.$url.css('/static/img/shop/goods/groupon-btn.png');
@@ -239,7 +240,7 @@
         title: state.activity.name,
         image: sheep.$url.cdn(state.goodsInfo.picUrl),
         params: {
-          page: '3',
+          page: SharePageEnum.GROUPON.value,
           query: state.activity.id,
         },
       },
@@ -257,14 +258,25 @@
     // 非法参数
     if (!options.id) {
       state.goodsInfo = null;
+      state.skeletonLoading = false;
       return;
     }
     state.grouponId = options.id;
     // 加载活动信息
     const { code, data: activity } = await CombinationApi.getCombinationActivity(state.grouponId);
+    if (code !== 0) {
+      state.goodsInfo = null;
+      state.skeletonLoading = false;
+      return;
+    }
     state.activity = activity;
     // 加载商品信息
     const { data: spu } = await SpuApi.getSpuDetail(activity.spuId);
+    if (code !== 0) {
+      state.goodsInfo = null;
+      state.skeletonLoading = false;
+      return;
+    }
     state.goodsId = spu.id;
 
     // 默认显示最低价

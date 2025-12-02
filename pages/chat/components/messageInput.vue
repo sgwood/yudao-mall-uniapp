@@ -1,13 +1,13 @@
 <template>
   <view class="send-wrap ss-flex">
     <view class="left ss-flex ss-flex-1">
-      <uni-easyinput
+      <optimize-input
         class="ss-flex-1 ss-p-l-22"
         :inputBorder="false"
         :clearable="false"
         v-model="message"
         placeholder="请输入你要咨询的问题"
-      ></uni-easyinput>
+      ></optimize-input>
     </view>
     <text class="sicon-basic bq" @tap.stop="onTools('emoji')"></text>
     <text
@@ -15,15 +15,23 @@
       class="sicon-edit"
       :class="{ 'is-active': toolsMode === 'tools' }"
       @tap.stop="onTools('tools')"
-    ></text>
-    <button v-if="message" class="ss-reset-button send-btn" @tap="sendMessage">
-      发送
+    />
+    <button
+      v-if="message"
+      class="ss-reset-button send-btn"
+      @tap="sendMessage"
+      :disabled="isDisabled || sending"
+      :class="{ disabled: isDisabled || sending }"
+    >
+      <text v-if="sending">发送中</text>
+      <text v-else>发送</text>
     </button>
   </view>
 </template>
 
 <script setup>
-  import { computed } from 'vue';
+  import { computed, ref, onUnmounted } from 'vue';
+  import OptimizeInput from '@/pages/chat/components/optimize-input.vue';
   /**
    * 消息发送组件
    */

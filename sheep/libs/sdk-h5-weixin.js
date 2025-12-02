@@ -30,7 +30,7 @@ export default {
     }
 
     // 调用后端接口，获得 JSSDK 初始化所需的签名
-    const url = location.href.split('#')[0];
+    const url = location.origin;
     const { code, data } = await AuthUtil.createWeixinMpJsapiSignature(url);
     if (code === 0) {
       jweixin.config({
@@ -39,9 +39,18 @@ export default {
         timestamp: data.timestamp,
         nonceStr: data.nonceStr,
         signature: data.signature,
-        jsApiList: ['chooseWXPay', 'openLocation', 'getLocation','updateTimelineShareData','scanQRCode'], // TODO 芋艿：后续可以设置更多权限；
-        openTagList: data.openTagList
+        jsApiList: [
+          'chooseWXPay',
+          'openLocation',
+          'getLocation',
+          'updateAppMessageShareData',
+          'updateTimelineShareData',
+          'scanQRCode',
+        ], // TODO 芋艿：后续可以设置更多权限；
+        openTagList: data.openTagList,
       });
+    } else {
+      console.log('请求 JSSDK 配置失败，错误码：', code);
     }
 
     // 监听结果
@@ -49,13 +58,13 @@ export default {
     jweixin.error((err) => {
       configSuccess = false;
       console.error('微信 JSSDK 初始化失败', err);
-      // $helper.toast('微信JSSDK:' + err.errMsg);
+      $helper.toast('微信JSSDK:' + err.errMsg);
     });
     jweixin.ready(() => {
       if (configSuccess) {
         console.log('微信 JSSDK 初始化成功');
       }
-    })
+    });
 
     // 回调
     if (callback) {
@@ -110,7 +119,7 @@ export default {
     });
   },
 
-  // 更新微信分享信息 TODO 芋艿：未测试
+  // 更新微信分享信息
   updateShareInfo(data, callback = null) {
     this.isReady(() => {
       const shareData = {
@@ -141,7 +150,7 @@ export default {
         ...data,
         success: function (res) {
           console.log(res);
-        }
+        },
       });
     });
   },

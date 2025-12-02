@@ -45,14 +45,7 @@ export function sleep(value = 30) {
  * @link 运行期判断平台 https://uniapp.dcloud.io/frame?id=判断平台
  */
 export function os() {
-  return uni.getSystemInfoSync().platform.toLowerCase();
-}
-/**
- * @description 获取系统信息同步接口
- * @link 获取系统信息同步接口 https://uniapp.dcloud.io/api/system/info?id=getsysteminfosync
- */
-export function sys() {
-  return uni.getSystemInfoSync();
+  return uni.getDeviceInfo().platform.toLowerCase();
 }
 
 /**
@@ -638,10 +631,13 @@ function pages() {
 export function getRootUrl() {
   let url = '';
   // #ifdef H5
-  url = location.origin + '/';
+  url = location.origin;
+  // + location.pathname;
 
   if (location.hash !== '') {
     url += '#/';
+  } else {
+    url += '/';
   }
   // #endif
   return url;
@@ -679,7 +675,6 @@ export default {
   getPx,
   sleep,
   os,
-  sys,
   random,
   guid,
   $parent,

@@ -1,6 +1,6 @@
 <!-- 商品浏览记录  -->
 <template>
-  <s-layout title="我的足迹" :bgStyle="{ color: '#f2f2f2' }">
+  <s-layout :bgStyle="{ color: '#f2f2f2' }" title="我的足迹">
     <view class="cart-box ss-flex ss-flex-col ss-row-between">
       <!-- 头部 -->
       <view class="cart-header ss-flex ss-col-center ss-row-between ss-p-x-30">
@@ -122,7 +122,7 @@
   import sheep from '@/sheep';
   import { reactive } from 'vue';
   import { onLoad, onReachBottom } from '@dcloudio/uni-app';
-  import _ from 'lodash-es';
+  import { concat } from 'lodash-es';
   import SpuHistoryApi from '@/sheep/api/product/history';
   import { cloneDeep } from '@/sheep/helper/utils';
 
@@ -151,7 +151,7 @@
       return;
     }
 
-    state.pagination.list = _.concat(state.pagination.list, data.list);
+    state.pagination.list = concat(state.pagination.list, data.list);
     state.pagination.total = data.total;
     state.loadStatus = state.pagination.list.length < state.pagination.total ? 'more' : 'noMore';
   }

@@ -121,8 +121,8 @@
   import { reactive, ref } from 'vue';
   import { onLoad, onReachBottom } from '@dcloudio/uni-app';
   import sheep from '@/sheep';
-  import _ from 'lodash-es';
-  import { resetPagination } from '@/sheep/util';
+  import { concat } from 'lodash-es';
+  import { resetPagination } from '@/sheep/helper/utils';
   import SpuApi from '@/sheep/api/product/spu';
   import OrderApi from '@/sheep/api/trade/order';
   import { appendSettlementProduct } from '@/sheep/hooks/useGoods';
@@ -187,15 +187,15 @@
 
   // 处理双列布局 leftGoodsList + rightGoodsList
   function mountMasonry(height = 0, where = 'left') {
-    if (!state.pagination.list[count]) {
-      return;
-    }
-
     if (where === 'left') {
       leftHeight += height;
     } else {
       rightHeight += height;
     }
+    if (!state.pagination.list[count]) {
+      return;
+    }
+
     if (leftHeight <= rightHeight) {
       state.leftGoodsList.push(state.pagination.list[count]);
     } else {
@@ -286,7 +286,7 @@
       }
       appendSettlementProduct(data.list, res.data);
     });
-    state.pagination.list = _.concat(state.pagination.list, data.list);
+    state.pagination.list = concat(state.pagination.list, data.list);
     state.pagination.total = data.total;
     state.loadStatus = state.pagination.list.length < state.pagination.total ? 'more' : 'noMore';
     mountMasonry();

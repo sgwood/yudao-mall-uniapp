@@ -1,6 +1,6 @@
 <!-- 支付结果页面 -->
 <template>
-  <s-layout title="支付结果" :bgStyle="{ color: '#FFF' }">
+  <s-layout :bgStyle="{ color: '#FFF' }" title="支付结果">
     <view class="pay-result-box ss-flex-col ss-row-center ss-col-center">
       <!-- 信息展示 -->
       <view class="pay-waiting ss-m-b-30" v-if="payResult === 'waiting'" />
@@ -17,7 +17,7 @@
       <view class="tip-text ss-m-b-30" v-if="payResult === 'success'">支付成功</view>
       <view class="tip-text ss-m-b-30" v-if="payResult === 'failed'">支付失败</view>
       <view class="tip-text ss-m-b-30" v-if="payResult === 'closed'">该订单已关闭</view>
-      <view class="tip-text ss-m-b-30" v-if="payResult === 'waiting'">检测支付结果...</view>
+      <view class="tip-text ss-m-b-30" v-if="payResult === 'waiting'">正在查询支付结果...</view>
       <view class="pay-total-num ss-flex" v-if="payResult === 'success'">
         <view>￥{{ fen2yuan(state.orderInfo.price) }}</view>
       </view>
@@ -63,14 +63,14 @@
 </template>
 
 <script setup>
-  import { onLoad, onHide, onShow } from '@dcloudio/uni-app';
-  import { reactive, computed, ref } from 'vue';
+  import { onHide, onLoad, onShow } from '@dcloudio/uni-app';
+  import { computed, reactive, ref } from 'vue';
   import { isEmpty } from 'lodash-es';
   import sheep from '@/sheep';
   import PayOrderApi from '@/sheep/api/pay/order';
   import { fen2yuan } from '@/sheep/hooks/useGoods';
   import OrderApi from '@/sheep/api/trade/order';
-  import { WxaSubscribeTemplate } from '@/sheep/util/const';
+  import { WxaSubscribeTemplate } from '@/sheep/helper/const';
 
   const state = reactive({
     id: 0, // 支付单号
@@ -97,11 +97,29 @@
     }
   });
 
+  function showRepayModal() {
+    if (state.result !== 'failed') return;
+    uni.showModal({
+      title: '确认支付',
+      content: '未检测到您的支付结果,请确认您是否已经支付完成？',
+      cancelText: '取消',
+      confirmText: '我已支付',
+      success: function (res) {
+        if (res.confirm) {
+          state.counter = 0;
+          setTimeout(() => {
+            getOrderInfo(state.id);
+          }, 100);
+        }
+      },
+    });
+  }
+
   // 获得订单信息
   async function getOrderInfo(id) {
     state.counter++;
     // 1. 加载订单信息
-    const { data, code } = await PayOrderApi.getOrder(id);
+    const { data, code } = await PayOrderApi.getOrder(id, true);
     if (code === 0) {
       state.orderInfo = data;
       if (!state.orderInfo || state.orderInfo.status === 30) {
@@ -137,15 +155,16 @@
         return;
       }
     }
-    // 2.1 情况三一：未支付，且轮询次数小于三次，则继续轮询
-    if (state.counter < 3 && state.result === 'unpaid') {
+    // 2.1 情况三一：未支付，且轮询次数小于五次，则继续轮询
+    if (state.counter < 5 && state.result === 'unpaid') {
       setTimeout(() => {
         getOrderInfo(id);
-      }, 1500);
+      }, 2000);
     }
-    // 2.2 情况二：超过三次检测才判断为支付失败
-    if (state.counter >= 3) {
+    // 2.2 情况二：超过五次检测才判断为支付失败
+    if (state.counter >= 5) {
       state.result = 'failed';
+      showRepayModal();
     }
   }
 
@@ -203,7 +222,7 @@
     if (options.payState === 'fail') {
       state.result = 'failed';
     } else {
-      // 轮询三次检测订单支付结果
+      // 轮询五次检测订单支付结果
       await getOrderInfo(state.id);
     }
   });

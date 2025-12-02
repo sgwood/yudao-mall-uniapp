@@ -9,7 +9,7 @@ import $store from '@/sheep/store';
 import $platform from '@/sheep/platform';
 import { showAuthModal } from '@/sheep/hooks/useModal';
 import AuthUtil from '@/sheep/api/member/auth';
-import { getTerminal } from '@/sheep/util/const';
+import { getTerminal } from '@/sheep/helper/const';
 
 const options = {
   // 显示操作成功消息 默认不显示
@@ -26,7 +26,8 @@ const options = {
   loadingMsg: '加载中',
   // 需要授权才能请求 默认放开
   auth: false,
-  // ...
+  // 是否传递 token
+  isToken: true,
 };
 
 // Loading全局实例
@@ -90,14 +91,14 @@ http.interceptors.request.use(
     }
 
     // 增加 token 令牌、terminal 终端、tenant 租户的请求头
-    const token = getAccessToken();
+    const token = config.custom.isToken ? getAccessToken() : undefined;
     if (token) {
       config.header['Authorization'] = token;
     }
     config.header['terminal'] = getTerminal();
 
     config.header['Accept'] = '*/*';
-    config.header['tenant-id'] = tenantId;
+    config.header['tenant-id'] = getTenantId();
     return config;
   },
   (error) => {
@@ -124,9 +125,11 @@ http.interceptors.response.use(
       if (response.data.code === 401) {
         return refreshToken(response.config);
       }
-
-      // 错误提示
-      if (response.config.custom.showError) {
+      // 特殊：处理分销用户绑定失败的提示
+      if ((response.data.code + '').includes('1011007')) {
+        console.error(`分销用户绑定失败，原因：${response.data.msg}`);
+      } else if (response.config.custom.showError) {
+        // 错误提示
         uni.showToast({
           title: response.data.msg || '服务器开小差啦,请稍后再试~',
           icon: 'none',
@@ -202,7 +205,7 @@ http.interceptors.response.use(
     }
 
     if (error && error.config) {
-      if (error.config.custom.showError === false) {
+      if (error.config.custom.showError) {
         uni.showToast({
           title: error.data?.msg || errorMessage,
           icon: 'none',
@@ -293,6 +296,11 @@ export const getAccessToken = () => {
 /** 获得刷新令牌 */
 export const getRefreshToken = () => {
   return uni.getStorageSync('refresh-token');
+};
+
+/** 获得租户编号 */
+export const getTenantId = () => {
+  return uni.getStorageSync('tenant-id') || tenantId;
 };
 
 const request = (config) => {

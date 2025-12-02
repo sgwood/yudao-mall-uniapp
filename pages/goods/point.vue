@@ -7,7 +7,10 @@
     <detailSkeleton v-if="state.skeletonLoading" />
     <!-- 下架/售罄提醒 -->
     <s-empty
-      v-else-if="state.goodsInfo === null || state.goodsInfo.activity_type !== PromotionActivityTypeEnum.POINT.type"
+      v-else-if="
+        state.goodsInfo === null ||
+        state.goodsInfo.activity_type !== PromotionActivityTypeEnum.POINT.type
+      "
       text="活动不存在或已结束"
       icon="/static/soldout-empty.png"
       showAction
@@ -37,7 +40,9 @@
               ></image>
               <text class="point-text ss-m-r-16">
                 {{ getShowPrice.point }}
-                {{ !getShowPrice.price || getShowPrice.price === 0 ? '' : `+￥${getShowPrice.price}` }}
+                {{
+                  !getShowPrice.price || getShowPrice.price === 0 ? '' : `+￥${getShowPrice.price}`
+                }}
               </text>
             </view>
             <view class="sales-text">
@@ -87,21 +92,19 @@
           <button
             class="ss-reset-button btn-box ss-flex-col"
             @tap="state.showSelectSku = true"
-            :class="
-             state.goodsInfo.stock != 0
-                ? 'check-btn-box'
-                : 'disabled-btn-box'
-            "
+            :class="state.goodsInfo.stock != 0 ? 'check-btn-box' : 'disabled-btn-box'"
             :disabled="state.goodsInfo.stock === 0"
           >
             <view class="price-box ss-flex">
               <image
                 :src="sheep.$url.static('/static/img/shop/goods/score1.svg')"
-                style="width: 36rpx;height: 36rpx;margin: 0 4rpx;"
+                style="width: 36rpx; height: 36rpx; margin: 0 4rpx"
               ></image>
               <text class="point-text ss-m-r-16">
                 {{ getShowPrice.point }}
-                {{ !getShowPrice.price || getShowPrice.price === 0 ? '' : `+￥${getShowPrice.price}` }}
+                {{
+                  !getShowPrice.price || getShowPrice.price === 0 ? '' : `+￥${getShowPrice.price}`
+                }}
               </text>
             </view>
             <view v-if="state.goodsInfo.stock === 0">已售罄</view>
@@ -126,7 +129,7 @@
   import detailCommentCard from './components/detail/detail-comment-card.vue';
   import detailContentCard from './components/detail/detail-content-card.vue';
   import SpuApi from '@/sheep/api/product/spu';
-  import { PromotionActivityTypeEnum } from '@/sheep/util/const';
+  import { PromotionActivityTypeEnum, SharePageEnum } from '@/sheep/helper/const';
   import PointApi from '@/sheep/api/promotion/point';
 
   const headerBg = sheep.$url.css('/static/img/shop/goods/score-bg.png');
@@ -135,8 +138,7 @@
   const seckillBg = sheep.$url.css('/static/img/shop/goods/seckill-tip-bg.png');
   const grouponBg = sheep.$url.css('/static/img/shop/goods/groupon-tip-bg.png');
 
-  onPageScroll(() => {
-  });
+  onPageScroll(() => {});
   const state = reactive({
     skeletonLoading: true,
     goodsInfo: {},
@@ -171,7 +173,6 @@
   }
 
   // 分享信息
-  // TODO puhui999: 下次 fix
   const shareInfo = computed(() => {
     if (isEmpty(unref(activity))) return {};
     return sheep.$platform.share.getShareInfo(
@@ -179,7 +180,7 @@
         title: activity.value.name,
         image: sheep.$url.cdn(state.goodsInfo.picUrl),
         params: {
-          page: '4',
+          page: SharePageEnum.POINT.value,
           query: activity.value.id,
         },
       },
@@ -187,8 +188,8 @@
         type: 'goods', // 商品海报
         title: activity.value.name, // 商品标题
         image: sheep.$url.cdn(state.goodsInfo.picUrl), // 商品主图
-        price: state.goodsInfo.price, // 商品价格
-        marketPrice: state.goodsInfo.marketPrice, // 商品原价
+        price: (getShowPrice.value.price || 0) + ` + ${getShowPrice.value.point} 积分`, // 积分价格
+        marketPrice: fen2yuan(state.goodsInfo.marketPrice), // 商品原价
       },
     );
   });
@@ -209,18 +210,14 @@
     };
   });
 
-  const getShowPriceText = computed(() => {
-    let priceText = `￥${fen2yuan(state.goodsInfo.price)}`;
-    if (!isEmpty(state.selectedSku)) {
-      const sku = state.selectedSku;
-      priceText = `${sku.point}${!sku.pointPrice ? '' : `+￥${fen2yuan(sku.pointPrice)}`}`;
-    }
-    return priceText;
-  });
-
   // 查询活动
   const getActivity = async (id) => {
     const { data } = await PointApi.getPointActivity(id);
+    if (!data) {
+      state.goodsInfo = null;
+      state.skeletonLoading = false;
+      return;
+    }
     activity.value = data;
     // 查询商品
     await getSpu(data.spuId);
@@ -229,6 +226,11 @@
   // 查询商品
   const getSpu = async (id) => {
     const { data } = await SpuApi.getSpuDetail(id);
+    if (!data) {
+      state.goodsInfo = null;
+      state.skeletonLoading = false;
+      return;
+    }
     data.activity_type = PromotionActivityTypeEnum.POINT.type;
     state.goodsInfo = data;
     state.goodsInfo.stock = Math.min(data.stock, activity.value.stock);
@@ -257,6 +259,7 @@
     // 非法参数
     if (!options.id) {
       state.goodsInfo = null;
+      state.skeletonLoading = false;
       return;
     }
 

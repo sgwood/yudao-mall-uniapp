@@ -1,7 +1,6 @@
 <!-- 订单详情 -->
 <template>
   <s-layout title="订单详情" class="index-wrap" navbar="inner">
-    <!-- 订单状态 TODO -->
     <view
       class="state-box ss-flex-col ss-col-center ss-row-right"
       :style="[
@@ -12,37 +11,36 @@
       ]"
     >
       <view class="ss-flex ss-m-t-32 ss-m-b-20">
+        <!-- 待支付 -->
         <image
-          v-if="
-            state.orderInfo.status_code == 'unpaid' ||
-            state.orderInfo.status === 10 || // 待发货
-            state.orderInfo.status_code == 'nocomment'
-          "
+          v-if="state.orderInfo.status === 0"
+          class="state-img"
+          :src="sheep.$url.static('/static/img/shop/order/no_pay.png')"
+        />
+        <!-- 待发货 -->
+        <image
+          v-if="state.orderInfo.status === 10"
           class="state-img"
           :src="sheep.$url.static('/static/img/shop/order/order_loading.png')"
-        >
-        </image>
+        />
+        <!-- 已完成 -->
         <image
-          v-if="
-            state.orderInfo.status_code == 'completed' ||
-            state.orderInfo.status_code == 'refund_agree'
-          "
+          v-else-if="state.orderInfo.status === 30"
           class="state-img"
           :src="sheep.$url.static('/static/img/shop/order/order_success.png')"
-        >
-        </image>
+        />
+        <!-- 已关闭 -->
         <image
-          v-if="state.orderInfo.status_code == 'cancel' || state.orderInfo.status_code == 'closed'"
+          v-else-if="state.orderInfo.status === 40"
           class="state-img"
           :src="sheep.$url.static('/static/img/shop/order/order_close.png')"
-        >
-        </image>
+        />
+        <!-- 已发货 -->
         <image
-          v-if="state.orderInfo.status_code == 'noget'"
+          v-else-if="state.orderInfo.status === 20"
           class="state-img"
           :src="sheep.$url.static('/static/img/shop/order/order_express.png')"
-        >
-        </image>
+        />
         <view class="ss-font-30">{{ formatOrderStatus(state.orderInfo) }}</view>
       </view>
       <view class="ss-font-26 ss-m-x-20 ss-m-b-70">
@@ -261,7 +259,7 @@
 <script setup>
   import sheep from '@/sheep';
   import { onLoad, onShow } from '@dcloudio/uni-app';
-  import { reactive, ref } from 'vue';
+  import { reactive, ref, watch } from 'vue';
   import { isEmpty } from 'lodash-es';
   import {
     fen2yuan,
@@ -271,6 +269,7 @@
   } from '@/sheep/hooks/useGoods';
   import OrderApi from '@/sheep/api/trade/order';
   import DeliveryApi from '@/sheep/api/trade/delivery';
+  import PayOrderApi from '@/sheep/api/pay/order';
   import PickUpVerify from '@/pages/order/pickUpVerify.vue';
 
   const statusBarHeight = sheep.$platform.device.statusBarHeight * 2;
@@ -278,8 +277,6 @@
 
   const state = reactive({
     orderInfo: {},
-    merchantTradeNo: '', // 商户订单号
-    comeinType: '', // 进入订单详情的来源类型
   });
 
   // ========== 门店自提（核销） ==========
@@ -331,7 +328,7 @@
   // 确认收货
   async function onConfirm(orderId, ignore = false) {
     // 需开启确认收货组件
-    // todo: 芋艿：待接入微信
+    // todo: 芋艿：【微信物流】待接入微信 https://gitee.com/sheepjs/shopro-uniapp/commit/a6bbba49b84dd418b84c5fefc8b7463df8f4901f
     // 1.怎么检测是否开启了发货组件功能？如果没有开启的话就不能在这里return出去
     // 2.如果开启了走mpConfirm方法,需要在App.vue的show方法中拿到确认收货结果
     let isOpenBusinessView = true;
@@ -406,7 +403,7 @@
     // 对详情数据进行适配
     let res;
     if (state.comeinType === 'wechat') {
-      // TODO 芋艿：微信场景下
+      // TODO 芋艿：【微信物流】微信场景下
       res = await OrderApi.getOrderDetail(id, {
         merchant_trade_no: state.merchantTradeNo,
       });
@@ -430,21 +427,31 @@
   }
 
   onShow(async () => {
-    //onShow中获取订单列表,保证跳转后页面为最新状态
-    await getOrderDetail(state.orderInfo.id);
-  })
+    // onShow 中获取订单列表,保证跳转后页面为最新状态
+    // 有几率在 onLoad 完成 state.orderInfo.id 赋值前进入 onShow
+    if (state.orderInfo.id) {
+      await getOrderDetail(state.orderInfo.id);
+    }
+  });
 
   onLoad(async (options) => {
     let id = 0;
     if (options.id) {
       id = options.id;
     }
-    // TODO 芋艿：下面两个变量，后续接入
-    state.comeinType = options.comein_type;
-    if (state.comeinType === 'wechat') {
-      state.merchantTradeNo = options.merchant_trade_no;
+    // 场景：例如说“微信小程序购物订单”
+    // https://developers.weixin.qq.com/miniprogram/dev/platform-capabilities/business-capabilities/order_center/order_center.html
+    // （小程序商品订单详情 path）配置参考：pages/order/detail?payOrderNo=${商品订单号} 。其中：${商品订单号} out_trade_no 为 payOrderNo
+    if (!id && options.payOrderNo) {
+      // 查询支付订单：根据 payOrderNo 取 merchantOrderId ，merchantOrderId 即 tradeOrderId
+      const payOrder = await PayOrderApi.getOrder(undefined, undefined, options.payOrderNo);
+      if (payOrder.code === 0) {
+        id = payOrder.data?.merchantOrderId;
+      }
     }
-    state.orderInfo.id = id
+    state.orderInfo.id = id;
+    // 完成 state.orderInfo.id 赋值后加载一次detail，但有几率与 onShow 重复可能导致 detail 会加载两次。
+    await getOrderDetail(state.orderInfo.id);
   });
 </script>
 

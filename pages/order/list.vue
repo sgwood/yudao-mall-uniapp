@@ -128,10 +128,9 @@
     handleOrderButtons,
   } from '@/sheep/hooks/useGoods';
   import sheep from '@/sheep';
-  import _ from 'lodash-es';
-  import { isEmpty } from 'lodash-es';
+  import { concat, isEmpty } from 'lodash-es';
   import OrderApi from '@/sheep/api/trade/order';
-  import { resetPagination } from '@/sheep/util';
+  import { resetPagination } from '@/sheep/helper/utils';
 
   // 数据
   const state = reactive({
@@ -206,10 +205,10 @@
     });
   }
 
-  // 确认收货 TODO 芋艿：待测试
+  // 确认收货
   async function onConfirm(order, ignore = false) {
     // 需开启确认收货组件
-    // todo: 芋艿：需要后续接入微信收货组件
+    // todo: 芋艿：【微信物流】需要后续接入微信收货组件 https://gitee.com/sheepjs/shopro-uniapp/commit/a6bbba49b84dd418b84c5fefc8b7463df8f4901f
     // 1.怎么检测是否开启了发货组件功能？如果没有开启的话就不能在这里return出去
     // 2.如果开启了走mpConfirm方法,需要在App.vue的show方法中拿到确认收货结果
     let isOpenBusinessView = true;
@@ -241,7 +240,7 @@
   }
 
   // #ifdef MP-WEIXIN
-  // 小程序确认收货组件 TODO 芋艿：后续再接入
+  // 小程序确认收货组件 TODO 芋艿：【微信物流】后续再接入
   function mpConfirm(order) {
     if (!wx.openBusinessView) {
       sheep.$helper.toast(`请升级微信版本`);
@@ -331,7 +330,7 @@
       return;
     }
     data.list.forEach((order) => handleOrderButtons(order));
-    state.pagination.list = _.concat(state.pagination.list, data.list);
+    state.pagination.list = concat(state.pagination.list, data.list);
     state.pagination.total = data.total;
     state.loadStatus = state.pagination.list.length < state.pagination.total ? 'more' : 'noMore';
   }

@@ -1,6 +1,6 @@
 <!-- 优惠券中心  -->
 <template>
-  <s-layout title="优惠券" :bgStyle="{ color: '#f2f2f2' }">
+  <s-layout :bgStyle="{ color: '#f2f2f2' }" title="优惠券">
     <su-sticky bgColor="#fff">
       <su-tabs
         :list="tabMaps"
@@ -71,8 +71,8 @@
   import sheep from '@/sheep';
   import { onLoad, onReachBottom } from '@dcloudio/uni-app';
   import { reactive } from 'vue';
-  import _ from 'lodash-es';
-  import { resetPagination } from '@/sheep/util';
+  import { concat } from 'lodash-es';
+  import { resetPagination } from '@/sheep/helper/utils';
   import CouponApi from '@/sheep/api/promotion/coupon';
 
   // 数据
@@ -128,7 +128,7 @@
     if (code !== 0) {
       return;
     }
-    state.pagination.list = _.concat(state.pagination.list, data.list);
+    state.pagination.list = concat(state.pagination.list, data.list);
     state.pagination.total = data.total;
     state.loadStatus = state.pagination.list.length < state.pagination.total ? 'more' : 'noMore';
   }
@@ -144,7 +144,7 @@
     if (code !== 0) {
       return;
     }
-    state.pagination.list = _.concat(state.pagination.list, data.list);
+    state.pagination.list = concat(state.pagination.list, data.list);
     state.pagination.total = data.total;
     state.loadStatus = state.pagination.list.length < state.pagination.total ? 'more' : 'noMore';
   }

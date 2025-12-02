@@ -60,7 +60,7 @@
                 </view>
                 <view class="disContB2" v-if="state.settlementSku.promotionEndTime > 0">
                   距结束仅剩
-                  <countDown
+                  <s-count-down
                     :tipText="' '"
                     :bgColor="bgColor"
                     :dayText="':'"
@@ -85,7 +85,10 @@
                 <view class="price-text ss-m-r-16">
                   {{ fen2yuan(state.selectedSku.price || state.goodsInfo.price) }}
                 </view>
-                <view class="origin-price-text" v-if="state.goodsInfo.marketPrice > state.goodsInfo.price">
+                <view
+                  class="origin-price-text"
+                  v-if="state.goodsInfo.marketPrice > state.goodsInfo.price"
+                >
                   {{ fen2yuan(state.selectedSku.marketPrice || state.goodsInfo.marketPrice) }}
                 </view>
               </view>
@@ -205,7 +208,7 @@
 </template>
 
 <script setup>
-  import { reactive, computed, ref, toRaw } from 'vue';
+  import { reactive, computed } from 'vue';
   import { onLoad, onPageScroll } from '@dcloudio/uni-app';
   import sheep from '@/sheep';
   import CouponApi from '@/sheep/api/promotion/coupon';
@@ -231,9 +234,8 @@
   import SpuApi from '@/sheep/api/product/spu';
 
   onPageScroll(() => {});
-  import countDown from '@/sheep/components/countDown/index.vue';
   import OrderApi from '@/sheep/api/trade/order';
-  import activity from '@/sheep/api/promotion/activity';
+  import { SharePageEnum } from '@/sheep/helper/const';
 
   const bgColor = {
     bgColor: '#E93323',
@@ -318,7 +320,7 @@
         image: sheep.$url.cdn(state.goodsInfo.picUrl),
         desc: state.goodsInfo.introduction,
         params: {
-          page: '2',
+          page: SharePageEnum.GOODS.value,
           query: state.goodsInfo.id,
         },
       },
@@ -385,19 +387,22 @@
     // 非法参数
     if (!options.id) {
       state.goodsInfo = null;
+      state.skeletonLoading = false;
       return;
     }
     state.goodsId = options.id;
     // 1. 加载商品信息
     SpuApi.getSpuDetail(state.goodsId).then((res) => {
-      // 未找到商品
       if (res.code !== 0 || !res.data) {
         state.goodsInfo = null;
+        state.skeletonLoading = false;
         return;
       }
       // 加载到商品
       state.skeletonLoading = false;
       state.goodsInfo = res.data;
+      // 获取结算信息
+      getSettlementByIds(state.goodsId);
       // 加载是否收藏
       if (isLogin.value) {
         FavoriteApi.isFavoriteExists(state.goodsId, 'goods').then((res) => {
@@ -419,8 +424,6 @@
       }
       state.activityList = res.data;
     });
-    //获取结算信息
-    getSettlementByIds(state.goodsId);
   });
 </script>
 

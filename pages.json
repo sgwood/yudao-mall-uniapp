@@ -549,7 +549,10 @@
 			"pages": [{
 				"path": "index",
 				"style": {
-					"navigationBarTitleText": "客服"
+					"navigationBarTitleText": "客服",
+                    "app-plus": {
+                      "softinputMode": "adjustResize"
+                    }
 				},
 				"meta": {
 					"auth": true,
@@ -678,6 +681,9 @@
 		"list": [{
 				"pagePath": "pages/index/index"
 			},
+            {
+				"pagePath": "pages/index/category"
+            },
 			{
 				"pagePath": "pages/index/cart"
 			},

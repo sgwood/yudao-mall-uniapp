@@ -14,9 +14,9 @@
       >
         <template #rightBottom>
           <view class="ss-flex ss-row-between">
-            <view class="commission-num" v-if="item.brokerageMinPrice === undefined"
-              >预计佣金：计算中</view
-            >
+            <view class="commission-num" v-if="item.brokerageMinPrice === undefined">
+              预计佣金：计算中
+            </view>
             <view
               class="commission-num"
               v-else-if="item.brokerageMinPrice === item.brokerageMaxPrice"
@@ -59,7 +59,7 @@
   import $share from '@/sheep/platform/share';
   import { onLoad, onReachBottom } from '@dcloudio/uni-app';
   import { reactive } from 'vue';
-  import _ from 'lodash-es';
+  import { concat } from 'lodash-es';
   import { showShareModal } from '@/sheep/hooks/useModal';
   import SpuApi from '@/sheep/api/product/spu';
   import BrokerageApi from '@/sheep/api/trade/brokerage';
@@ -76,13 +76,12 @@
     shareInfo: {},
   });
 
-  // TODO @puhui999：【分享】接入
   function onShareGoods(goodsInfo) {
     state.shareInfo = $share.getShareInfo(
       {
-        title: goodsInfo.title,
-        image: sheep.$url.cdn(goodsInfo.image),
-        desc: goodsInfo.subtitle,
+        title: goodsInfo.name,
+        image: sheep.$url.cdn(goodsInfo.picUrl),
+        desc: goodsInfo.introduction,
         params: {
           page: '2',
           query: goodsInfo.id,
@@ -90,10 +89,10 @@
       },
       {
         type: 'goods', // 商品海报
-        title: goodsInfo.title, // 商品标题
-        image: sheep.$url.cdn(goodsInfo.image), // 商品主图
-        price: goodsInfo.price[0], // 商品价格
-        original_price: goodsInfo.original_price, // 商品原价
+        title: goodsInfo.name, // 商品名称
+        image: sheep.$url.cdn(goodsInfo.picUrl), // 商品主图
+        price: fen2yuan(goodsInfo.price), // 商品价格
+        original_price: fen2yuan(goodsInfo.marketPrice), // 商品原价
       },
     );
     showShareModal();
@@ -125,7 +124,7 @@
     );
 
     // 在所有请求完成后合并列表和更新状态
-    state.pagination.list = _.concat(state.pagination.list, data.list);
+    state.pagination.list = concat(state.pagination.list, data.list);
     state.pagination.total = data.total;
     state.loadStatus = state.pagination.list.length < state.pagination.total ? 'more' : 'noMore';
   }

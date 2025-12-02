@@ -6,6 +6,7 @@
       v-if="data.type === 'text'"
       class="nav-title inline"
       :style="[{ color: data.textColor, width: width }]"
+      @tap="sheep.$router.go(data.url)"
     >
       {{ data.text }}
     </view>
@@ -22,10 +23,13 @@
     <view class="ss-flex-1" v-if="data.type === 'search'" :style="[{ width: width }]">
       <s-search-block
         :placeholder="data.placeholder || '搜索关键字'"
+        :placeholder-position="data.placeholderPosition"
         :radius="data.borderRadius"
-        elBackground="#fff"
+        :el-background="data.backgroundColor"
+        :font-color="data.textColor"
         :height="height"
         :width="width"
+        :show-scan="data.showScan"
         @click="sheep.$router.go('/pages/index/search')"
       ></s-search-block>
     </view>

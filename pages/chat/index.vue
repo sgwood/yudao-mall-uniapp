@@ -5,7 +5,7 @@
     navbar="inner"
   >
     <!--  覆盖头部导航栏背景颜色  -->
-    <div class="page-bg" :style="{ height: sys_navBar + 'px' }"></div>
+    <view class="page-bg" :style="{ height: sys_navBar + 'px' }"></view>
     <!--  聊天区域  -->
     <MessageList ref="messageListRef">
       <template #bottom>
@@ -13,6 +13,9 @@
           v-model="chat.msg"
           @on-tools="onTools"
           @send-message="onSendMessage"
+          :auto-focus="false"
+          :show-char-count="true"
+          :max-length="500"
         ></message-input>
       </template>
     </MessageList>
@@ -29,6 +32,9 @@
         v-model="chat.msg"
         @on-tools="onTools"
         @send-message="onSendMessage"
+        :auto-focus="false"
+        :show-char-count="true"
+        :max-length="500"
       ></message-input>
     </tools-popup>
     <!--  商品订单选择  -->
@@ -54,8 +60,8 @@
   } from '@/pages/chat/util/constants';
   import FileApi from '@/sheep/api/infra/file';
   import KeFuApi from '@/sheep/api/promotion/kefu';
-  import { useWebSocket } from '@/sheep/hooks/useWebSocket';
-  import { jsonParse } from '@/sheep/util';
+  import { useWebSocket } from './util/useWebSocket';
+  import { jsonParse } from '@/sheep/helper/utils';
 
   const sys_navBar = sheep.$platform.navbar;
 
@@ -77,7 +83,6 @@
         content: JSON.stringify({ text: chat.msg }),
       };
       await KeFuApi.sendKefuMessage(data);
-      await messageListRef.value.refreshMessageList();
       chat.msg = '';
     } finally {
       chat.showTools = false;
@@ -104,13 +109,21 @@
       return;
     }
 
-    if (!chat.toolsMode || chat.toolsMode === mode) {
-      chat.showTools = !chat.showTools;
+    // 第二次点击关闭
+    if (chat.showTools && chat.toolsMode === mode) {
+      handleToolsClose();
+      return;
     }
-    chat.toolsMode = mode;
-    if (!chat.showTools) {
+    // 切换工具栏
+    if (chat.showTools && chat.toolsMode !== mode) {
+      chat.showTools = false;
       chat.toolsMode = '';
     }
+    // 延迟打开等一下过度效果
+    setTimeout(() => {
+      chat.toolsMode = mode;
+      chat.showTools = true;
+    }, 200);
   }
 
   function onShowSelect(mode) {
@@ -173,6 +186,8 @@
       // 2.3 消息类型：KEFU_MESSAGE_ADMIN_READ
       if (type === WebSocketMessageTypeConstants.KEFU_MESSAGE_ADMIN_READ) {
         console.log('管理员已读消息');
+        // 更新消息已读状态
+        sheep.$helper.toast('客服已读您的消息');
       }
     },
   });

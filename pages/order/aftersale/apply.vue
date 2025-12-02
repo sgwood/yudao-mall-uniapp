@@ -64,10 +64,9 @@
             v-model="formData.applyDescription"
             placeholder="客官~请描述您遇到的问题，建议上传照片"
           />
-          <!-- TODO 芋艿：上传的测试 -->
           <view class="upload-img">
             <s-uploader
-              v-model:url="formData.images"
+              v-model:url="formData.applyPicUrls"
               fileMediatype="image"
               limit="9"
               mode="grid"
@@ -126,7 +125,6 @@
   import TradeConfigApi from '@/sheep/api/trade/config';
   import { fen2yuan } from '@/sheep/hooks/useGoods';
   import AfterSaleApi from '@/sheep/api/trade/afterSale';
-  import { WxaSubscribeTemplate } from '@/sheep/util/const';
 
   const form = ref(null);
   const state = reactive({
@@ -155,7 +153,7 @@
     way: '',
     applyReason: '',
     applyDescription: '',
-    images: [],
+    applyPicUrls: [],
   });
   const rules = reactive({});
 

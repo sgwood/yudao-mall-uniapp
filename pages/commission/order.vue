@@ -72,11 +72,10 @@
 
 <script setup>
   import sheep from '@/sheep';
-  import { onLoad, onReachBottom } from '@dcloudio/uni-app';
+  import { onLoad, onPageScroll, onReachBottom } from '@dcloudio/uni-app';
   import { reactive } from 'vue';
-  import _ from 'lodash-es';
-  import { onPageScroll } from '@dcloudio/uni-app';
-  import { resetPagination } from '@/sheep/util';
+  import { concat } from 'lodash-es';
+  import { resetPagination } from '@/sheep/helper/utils';
   import BrokerageApi from '@/sheep/api/trade/brokerage';
   import { fen2yuan } from '../../sheep/hooks/useGoods';
 
@@ -104,15 +103,15 @@
   const tabMaps = [
     {
       name: '全部',
-      value: 'all',
+      value: -1,
     },
     {
       name: '待结算',
-      value: '0', // 待结算
+      value: 0, // 待结算
     },
     {
       name: '已结算',
-      value: '1', // 已结算
+      value: 1, // 已结算
     },
   ];
 
@@ -126,16 +125,21 @@
   // 获取订单列表
   async function getOrderList() {
     state.loadStatus = 'loading';
-    let { code, data } = await BrokerageApi.getBrokerageRecordPage({
+    const tab = tabMaps[state.currentTab];
+    const queryParams = {
       pageSize: state.pagination.pageSize,
       pageNo: state.pagination.pageNo,
       bizType: 1, // 获得推广佣金
-      status: state.currentTab > 0 ? state.currentTab : undefined,
-    });
+      status: tab.value,
+    };
+    if (tab.value < 0) {
+      delete queryParams.status;
+    }
+    const { code, data } = await BrokerageApi.getBrokerageRecordPage(queryParams);
     if (code !== 0) {
       return;
     }
-    state.pagination.list = _.concat(state.pagination.list, data.list);
+    state.pagination.list = concat(state.pagination.list, data.list);
     state.pagination.total = data.total;
     state.loadStatus = state.pagination.list.length < state.pagination.total ? 'more' : 'noMore';
     if (state.currentTab === 0) {

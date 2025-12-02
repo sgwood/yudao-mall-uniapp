@@ -40,14 +40,21 @@
           :style="[{ color: goodsFields.price.color }]"
         >
           <!-- 活动价格 -->
-          <view class="ss-flex" v-if="data.activityType && data.activityType === PromotionActivityTypeEnum.POINT.type">
+          <view
+            class="ss-flex"
+            v-if="data.activityType && data.activityType === PromotionActivityTypeEnum.POINT.type"
+          >
             <image
               :src="sheep.$url.static('/static/img/shop/goods/score1.svg')"
               class="point-img"
             ></image>
             <text class="point-text ss-m-r-16">
               {{ data.point }}
-              {{ !data.pointPrice || data.pointPrice === 0 ? '' : `+${priceUnit}${fen2yuan(data.pointPrice)}` }}
+              {{
+                !data.pointPrice || data.pointPrice === 0
+                  ? ''
+                  : `+${priceUnit}${fen2yuan(data.pointPrice)}`
+              }}
             </text>
           </view>
           <template v-else>
@@ -100,14 +107,21 @@
           :style="[{ color: goodsFields.price.color }]"
         >
           <!-- 活动价格 -->
-          <view class="ss-flex" v-if="data.activityType && data.activityType === PromotionActivityTypeEnum.POINT.type">
+          <view
+            class="ss-flex"
+            v-if="data.activityType && data.activityType === PromotionActivityTypeEnum.POINT.type"
+          >
             <image
               :src="sheep.$url.static('/static/img/shop/goods/score1.svg')"
               class="point-img"
             ></image>
             <text class="point-text ss-m-r-16">
               {{ data.point }}
-              {{ !data.pointPrice || data.pointPrice === 0 ? '' : `+${priceUnit}${fen2yuan(data.pointPrice)}` }}
+              {{
+                !data.pointPrice || data.pointPrice === 0
+                  ? ''
+                  : `+${priceUnit}${fen2yuan(data.pointPrice)}`
+              }}
             </text>
           </view>
           <template v-else>
@@ -126,7 +140,19 @@
       <view v-if="tagStyle.show" class="tag-icon-box">
         <image class="tag-icon" :src="sheep.$url.cdn(tagStyle.src || tagStyle.imgUrl)" />
       </view>
-      <image class="md-img-box" :src="sheep.$url.cdn(data.image || data.picUrl)" mode="widthFix" />
+      <image
+        v-if="data.image_wh"
+        class="md-img-box"
+        :src="sheep.$url.cdn(data.image || data.picUrl)"
+        mode="widthFix"
+      />
+      <image
+        v-else
+        class="md-img-box"
+        :src="sheep.$url.cdn(data.image || data.picUrl)"
+        :style="[{ height: defaultImgWidth * 2 + 'rpx' }]"
+        mode="aspectFill"
+      />
       <view
         class="md-goods-content ss-flex-col ss-row-around ss-p-b-20 ss-p-t-20 ss-p-x-16"
         :id="elId"
@@ -174,14 +200,21 @@
             :style="[{ color: goodsFields.price.color }]"
           >
             <!-- 活动价格 -->
-            <view class="ss-flex" v-if="data.activityType && data.activityType === PromotionActivityTypeEnum.POINT.type">
+            <view
+              class="ss-flex"
+              v-if="data.activityType && data.activityType === PromotionActivityTypeEnum.POINT.type"
+            >
               <image
                 :src="sheep.$url.static('/static/img/shop/goods/score1.svg')"
                 class="point-img"
               ></image>
               <text class="point-text ss-m-r-16">
                 {{ data.point }}
-                {{ !data.pointPrice || data.pointPrice === 0 ? '' : `+${priceUnit}${fen2yuan(data.pointPrice)}` }}
+                {{
+                  !data.pointPrice || data.pointPrice === 0
+                    ? ''
+                    : `+${priceUnit}${fen2yuan(data.pointPrice)}`
+                }}
               </text>
             </view>
             <template v-else>
@@ -275,14 +308,23 @@
           <view v-if="goodsFields.price?.show" class="ss-flex ss-col-bottom font-OPPOSANS">
             <view class="sl-goods-price ss-m-r-12" :style="[{ color: goodsFields.price.color }]">
               <!-- 活动价格 -->
-              <view class="ss-flex" v-if="data.activityType && data.activityType === PromotionActivityTypeEnum.POINT.type">
+              <view
+                class="ss-flex"
+                v-if="
+                  data.activityType && data.activityType === PromotionActivityTypeEnum.POINT.type
+                "
+              >
                 <image
                   :src="sheep.$url.static('/static/img/shop/goods/score1.svg')"
                   class="point-img"
                 ></image>
                 <text class="point-text ss-m-r-16">
                   {{ data.point }}
-                  {{ !data.pointPrice || data.pointPrice === 0 ? '' : `+${priceUnit}${fen2yuan(data.pointPrice)}` }}
+                  {{
+                    !data.pointPrice || data.pointPrice === 0
+                      ? ''
+                      : `+${priceUnit}${fen2yuan(data.pointPrice)}`
+                  }}
                 </text>
               </view>
               <template v-else>
@@ -369,14 +411,23 @@
           <view v-if="goodsFields.price?.show" class="ss-flex ss-col-bottom font-OPPOSANS">
             <view class="sl-goods-price ss-m-r-12" :style="[{ color: goodsFields.price.color }]">
               <!-- 活动价格 -->
-              <view class="ss-flex" v-if="data.activityType && data.activityType === PromotionActivityTypeEnum.POINT.type">
+              <view
+                class="ss-flex"
+                v-if="
+                  data.activityType && data.activityType === PromotionActivityTypeEnum.POINT.type
+                "
+              >
                 <image
                   :src="sheep.$url.static('/static/img/shop/goods/score1.svg')"
                   class="point-img"
                 ></image>
                 <text class="ss-m-r-16">
                   {{ data.point }}
-                  {{ !data.pointPrice || data.pointPrice === 0 ? '' : `+${priceUnit}${fen2yuan(data.pointPrice)}` }}
+                  {{
+                    !data.pointPrice || data.pointPrice === 0
+                      ? ''
+                      : `+${priceUnit}${fen2yuan(data.pointPrice)}`
+                  }}
                 </text>
               </view>
               <template v-else>
@@ -441,7 +492,7 @@
    * @event {Function()} click                    - 点击卡片
    *
    */
-  import { computed, getCurrentInstance, nextTick, onMounted } from 'vue';
+  import { computed, ref, reactive, getCurrentInstance, nextTick, onMounted } from 'vue';
   import sheep from '@/sheep';
   import {
     fen2yuan,
@@ -451,7 +502,10 @@
     getRewardActivityRuleItemDescriptions,
   } from '@/sheep/hooks/useGoods';
   import { isArray } from 'lodash-es';
-  import { PromotionActivityTypeEnum } from '@/sheep/util/const';
+  import { PromotionActivityTypeEnum } from '@/sheep/helper/const';
+
+  // 数据
+  let defaultImgWidth = ref(0);
 
   // 接收参数
   const props = defineProps({
@@ -578,14 +632,25 @@
   const salesAndStock = computed(() => {
     let text = [];
     if (props.goodsFields.salesCount?.show) {
-      if (props.data.activityType && props.data.activityType === PromotionActivityTypeEnum.POINT.type) {
-        text.push(formatExchange(props.data.sales_show_type, (props.data.pointTotalStock || 0) - (props.data.pointStock || 0)));
+      if (
+        props.data.activityType &&
+        props.data.activityType === PromotionActivityTypeEnum.POINT.type
+      ) {
+        text.push(
+          formatExchange(
+            props.data.sales_show_type,
+            (props.data.pointTotalStock || 0) - (props.data.pointStock || 0),
+          ),
+        );
       } else {
         text.push(formatSales(props.data.sales_show_type, props.data.salesCount));
       }
     }
     if (props.goodsFields.stock?.show) {
-      if (props.data.activityType && props.data.activityType === PromotionActivityTypeEnum.POINT.type) {
+      if (
+        props.data.activityType &&
+        props.data.activityType === PromotionActivityTypeEnum.POINT.type
+      ) {
         text.push(formatStock(props.data.stock_show_type, props.data.pointTotalStock));
       } else {
         text.push(formatStock(props.data.stock_show_type, props.data.stock));
@@ -613,14 +678,17 @@
         scrollOffset: true,
       });
       view.exec((data) => {
+        console.log(data, 'data');
         let totalHeight = 0;
         const goodsPriceCard = data[0];
-        if (props.data.image_wh) {
+        defaultImgWidth.value = data[0].width;
+
+        if (props.data.image_wh && Number(props.data.image_wh.w)) {
           totalHeight =
             (goodsPriceCard.width / props.data.image_wh.w) * props.data.image_wh.h +
             goodsPriceCard.height;
         } else {
-          totalHeight = goodsPriceCard.width;
+          totalHeight = goodsPriceCard.width + goodsPriceCard.height;
         }
         emits('getHeight', totalHeight);
       });

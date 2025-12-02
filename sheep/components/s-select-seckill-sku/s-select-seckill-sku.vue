@@ -19,8 +19,10 @@
           <view class="goods-title ss-line-2">{{ state.goodsInfo.name }}</view>
           <view class="header-right-bottom ss-flex ss-col-center ss-row-between">
             <!-- 价格 -->
-            <view v-if="state.goodsInfo.activity_type === PromotionActivityTypeEnum.POINT.type"
-                  class="price-text ss-flex">
+            <view
+              v-if="state.goodsInfo.activity_type === PromotionActivityTypeEnum.POINT.type"
+              class="price-text ss-flex"
+            >
               <image
                 v-if="!isEmpty(state.selectedSku)"
                 :src="sheep.$url.static('/static/img/shop/goods/score1.svg')"
@@ -97,21 +99,19 @@
   /**
    * 秒杀活动SKU选择，
    * 与s-select-sku的区别：多一个秒杀价的标签、没有加入购物车按钮、立即购买按钮叫确认、秒杀有最大购买数量限制
-   * 差别不大，可以考虑合并 todo @芋艿
    */
   // 按钮状态： active,nostock
   import { computed, reactive, watch } from 'vue';
   import sheep from '@/sheep';
   import { convertProductPropertyList, fen2yuan } from '@/sheep/hooks/useGoods';
   import { isEmpty, min } from 'lodash-es';
-  import { PromotionActivityTypeEnum } from '@/sheep/util/const';
+  import { PromotionActivityTypeEnum } from '@/sheep/helper/const';
 
   const emits = defineEmits(['change', 'addCart', 'buy', 'close']);
   const props = defineProps({
     modelValue: {
       type: Object,
-      default() {
-      },
+      default() {},
     },
     show: {
       type: Boolean,
@@ -126,7 +126,7 @@
   const state = reactive({
     goodsInfo: computed(() => props.modelValue),
     selectedSku: {},
-    currentPropertyArray: [],
+    currentPropertyArray: {},
   });
   const getShowPriceText = computed(() => {
     let priceText = `￥${fen2yuan(state.goodsInfo.price)}`;
@@ -209,7 +209,7 @@
       noChooseValueIds.splice(index, 1);
     } else {
       // 循环去除当前已选择的 value 属性值 id
-      state.currentPropertyArray.forEach((currentPropertyId) => {
+      Object.entries(state.currentPropertyArray).forEach(([propertyId, currentPropertyId]) => {
         if (currentPropertyId.toString() !== '') {
           return;
         }
@@ -226,8 +226,8 @@
     let choosePropertyIds = [];
     if (!isChecked) {
       // 当前已选择的 property
-      state.currentPropertyArray.forEach((currentPropertyId, currentValueId) => {
-        if (currentPropertyId !== '') {
+      Object.entries(state.currentPropertyArray).forEach(([propertyId, currentValueId]) => {
+        if (currentValueId !== '') {
           // currentPropertyId 为空是反选 填充的
           choosePropertyIds.push(currentValueId);
         }
@@ -258,9 +258,9 @@
         continue;
       }
       let isOk = true;
-      state.currentPropertyArray.forEach((propertyId) => {
-        // propertyId 不为空，并且，这个 条 sku 没有被选中，则排除
-        if (propertyId.toString() !== '' && sku.value_id_array.indexOf(propertyId) < 0) {
+      Object.entries(state.currentPropertyArray).forEach(([propertyId, valueId]) => {
+        // valueId 不为空，并且，这个 条 sku 没有被选中，则排除
+        if (valueId.toString() !== '' && sku.value_id_array.indexOf(valueId) < 0) {
           isOk = false;
         }
       });
@@ -289,7 +289,7 @@
 
     // 选中的 property 大类
     let choosePropertyId = [];
-    state.currentPropertyArray.forEach((currentPropertyId) => {
+    Object.entries(state.currentPropertyArray).forEach(([propertyId, currentPropertyId]) => {
       if (currentPropertyId !== '') {
         // currentPropertyId 为空是反选 填充的
         choosePropertyId.push(currentPropertyId);

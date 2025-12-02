@@ -1,7 +1,7 @@
 <template>
   <view
     class="page-app"
-    :class="['theme-' + sys.mode, 'main-' + sys.theme, 'font-' + sys.fontSize]"
+    :class="['theme-' + sys?.mode, 'main-' + sys?.theme, 'font-' + sys?.fontSize]"
   >
     <view class="page-main" :style="[bgMain]">
       <!-- 顶部导航栏-情况1：默认通用顶部导航栏 -->
@@ -27,7 +27,7 @@
         <su-inner-navbar v-if="navbar === 'inner'" :title="title" />
         <view
           v-if="navbar === 'inner'"
-          :style="[{ paddingTop: sheep.$platform.navbar + 'px' }]"
+          :style="[{ paddingTop: sheep?.$platform?.navbar + 'px' }]"
         ></view>
 
         <!-- 顶部导航栏-情况4：装修组件导航栏-沉浸式 -->
@@ -60,12 +60,11 @@
   /**
    * 模板组件 - 提供页面公共组件，属性，方法
    */
-  import { computed, reactive, ref } from 'vue';
+  import { computed, onMounted } from 'vue';
   import sheep from '@/sheep';
   import { isEmpty } from 'lodash-es';
-  import { onShow } from '@dcloudio/uni-app';
   // #ifdef MP-WEIXIN
-  import { onShareAppMessage } from '@dcloudio/uni-app';
+  import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app';
   // #endif
 
   const props = defineProps({
@@ -157,7 +156,7 @@
   const bgMain = computed(() => {
     if (navbarMode.value === 'inner') {
       return {
-        background: `${props.bgStyle.backgroundColor} url(${sheep.$url.cdn(
+        background: `${props.bgStyle.backgroundColor || props.bgStyle.color} url(${sheep.$url.cdn(
           props.bgStyle.backgroundImage,
         )}) no-repeat top center / 100% auto`,
       };
@@ -169,7 +168,7 @@
   const bgBody = computed(() => {
     if (navbarMode.value === 'normal') {
       return {
-        background: `${props.bgStyle.backgroundColor} url(${sheep.$url.cdn(
+        background: `${props.bgStyle.backgroundColor || props.bgStyle.color} url(${sheep.$url.cdn(
           props.bgStyle.backgroundImage,
         )}) no-repeat top center / 100% auto`,
       };
@@ -191,21 +190,34 @@
   });
 
   // #ifdef MP-WEIXIN
-  // 微信小程序分享
+  uni.showShareMenu({
+    withShareTicket: true,
+    menus: ['shareAppMessage', 'shareTimeline'],
+  });
+  // 微信小程序分享好友
   onShareAppMessage(() => {
     return {
       title: shareInfo.value.title,
-      path: shareInfo.value.path,
+      path: shareInfo.value.forward.path,
+      imageUrl: shareInfo.value.image,
+    };
+  });
+  // 微信小程序分享朋友圈
+  onShareTimeline(() => {
+    return {
+      title: shareInfo.value.title,
+      query: shareInfo.value.forward.path,
       imageUrl: shareInfo.value.image,
     };
   });
   // #endif
 
-  onShow(() => {
+  // 组件中使用 onMounted 监听页面加载，不是页面组件不使用 onShow
+  onMounted(()=>{
     if (!isEmpty(shareInfo.value)) {
       sheep.$platform.share.updateShareInfo(shareInfo.value);
     }
-  });
+  })
 </script>
 
 <style lang="scss" scoped>

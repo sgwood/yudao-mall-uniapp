@@ -148,12 +148,12 @@
   import sheep from '@/sheep';
   import { onLoad, onReachBottom } from '@dcloudio/uni-app';
   import { reactive } from 'vue';
-  import _ from 'lodash-es';
+  import { concat } from 'lodash-es';
   import CouponApi from '@/sheep/api/promotion/coupon';
   import { fen2yuan } from '@/sheep/hooks/useGoods';
   import SpuApi from '@/sheep/api/product/spu';
   import CategoryApi from '@/sheep/api/product/category';
-  import { resetPagination } from '@/sheep/util';
+  import { resetPagination } from '@/sheep/helper/utils';
 
   const state = reactive({
     id: 0, // 优惠劵模版编号 templateId
@@ -189,7 +189,7 @@
     if (code !== 0) {
       return;
     }
-    state.pagination.list = _.concat(state.pagination.list, data.list);
+    state.pagination.list = concat(state.pagination.list, data.list);
     state.pagination.total = data.total;
     state.loadStatus = state.pagination.list.length < state.pagination.total ? 'more' : 'noMore';
   }

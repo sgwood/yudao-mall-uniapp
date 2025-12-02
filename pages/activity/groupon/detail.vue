@@ -98,7 +98,7 @@
         <view class="ss-m-t-60 ss-flex ss-flex-wrap ss-row-center">
           <!-- 团长 -->
           <view class="header-avatar ss-m-r-24 ss-m-b-20">
-            <image :src="sheep.$url.cdn(state.data.headRecord.avatar)" class="avatar-img"></image>
+            <image :src="sheep.$url.cdn(state.data.headRecord.avatar) || sheep.$url.static('/static/img/shop/default_avatar.png')" class="avatar-img"></image>
             <view class="header-tag ss-flex ss-col-center ss-row-center">团长</view>
           </view>
           <!-- 团员 -->
@@ -107,7 +107,7 @@
             v-for="item in state.data.memberRecords"
             :key="item.id"
           >
-            <image :src="sheep.$url.cdn(item.avatar)" class="avatar-img"></image>
+            <image :src="sheep.$url.cdn(item.avatar) || sheep.$url.static('/static/img/shop/default_avatar.png')" class="avatar-img"></image>
             <view
               class="header-tag ss-flex ss-col-center ss-row-center"
               v-if="item.is_leader == '1'"
@@ -193,7 +193,6 @@
           @close="state.showSelectSku = false"
         />
       </view>
-
     </view>
 
     <s-empty v-if="!state.data && !state.loading" icon="/static/goods-empty.png" />
@@ -209,6 +208,7 @@
   import { isEmpty } from 'lodash-es';
   import CombinationApi from '@/sheep/api/promotion/combination';
   import SpuApi from '@/sheep/api/product/spu';
+  import { SharePageEnum } from '@/sheep/helper/const';
 
   const headerBg = sheep.$url.css('/static/img/shop/user/withdraw_bg.png');
   const statusBarHeight = sheep.$platform.device.statusBarHeight * 2;
@@ -234,7 +234,7 @@
         image: sheep.$url.cdn(state.data.headRecord.picUrl),
         desc: state.data.goods?.subtitle,
         params: {
-          page: '5',
+          page: SharePageEnum.GROUPON_DETAIL.value,
           query: state.data.headRecord.id,
         },
       },
@@ -243,6 +243,7 @@
         title: state.data.headRecord.spuName, // 商品标题
         image: sheep.$url.cdn(state.data.headRecord.picUrl), // 商品主图
         price: fen2yuan(state.data.headRecord.combinationPrice), // 商品价格
+        grouponNum: state.data.headRecord.userSize, // 拼团人数
       },
     );
   });

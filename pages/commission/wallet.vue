@@ -64,7 +64,7 @@
         </uni-datetime-picker>
 
         <view class="total-box">
-          <!-- TODO 芋艿：这里暂时不考虑做 -->
+          <!-- TODO 芋艿：【钱包-可优化】这里暂时不考虑做 -->
           <!-- <view class="ss-m-b-10">总收入￥{{ state.pagination.income.toFixed(2) }}</view> -->
           <!-- <view>总支出￥{{ (-state.pagination.expense).toFixed(2) }}</view> -->
         </view>
@@ -114,22 +114,62 @@
 
     <!-- 钱包记录 -->
     <view v-if="state.pagination.total > 0">
-      <view
-        class="wallet-list ss-flex border-bottom"
-        v-for="item in state.pagination.list"
-        :key="item.id"
-      >
-        <view class="list-content">
-          <view class="title-box ss-flex ss-row-between ss-m-b-20">
-            <text class="title ss-line-1">{{ item.title }}</text>
-            <view class="money">
-              <text v-if="item.price >= 0" class="add">+{{ fen2yuan(item.price) }}</text>
-              <text v-else class="minus">{{ fen2yuan(item.price) }}</text>
+      <!-- 分佣列表 -->
+      <view v-if="state.currentTab === 0">
+        <view
+          class="wallet-list ss-flex border-bottom"
+          v-for="item in state.pagination.list"
+          :key="item.id"
+        >
+          <view class="list-content">
+            <view class="title-box ss-flex ss-row-between ss-m-b-20">
+              <text class="title ss-line-1">{{ item.title }}</text>
+              <view class="money">
+                <text v-if="item.price >= 0" class="add">+{{ fen2yuan(item.price) }}</text>
+                <text v-else class="minus">{{ fen2yuan(item.price) }}</text>
+              </view>
+            </view>
+            <view class="ss-flex ss-row-between ss-col-center">
+              <text class="time">
+                {{ sheep.$helper.timeFormat(item.createTime, 'yyyy-mm-dd hh:MM:ss') }}
+              </text>
+              <view class="ss-flex ss-col-center">
+                <text class="status" :class="'status-' + item.status">{{ item.statusName }}</text>
+              </view>
             </view>
           </view>
-          <text class="time">{{
-            sheep.$helper.timeFormat(item.createTime, 'yyyy-mm-dd hh:MM:ss')
-          }}</text>
+        </view>
+      </view>
+      <!-- 提现列表 -->
+      <view v-else>
+        <view
+          class="wallet-list ss-flex border-bottom"
+          v-for="item in state.pagination.list"
+          :key="item.id"
+        >
+          <view class="list-content">
+            <view class="title-box ss-flex ss-row-between ss-m-b-20">
+              <text class="title ss-line-1">{{ item.typeName }}</text>
+              <view class="money">
+                <text class="minus">{{ fen2yuan(item.price) }}</text>
+              </view>
+            </view>
+            <view class="ss-flex ss-row-between ss-col-center">
+              <text class="time">
+                {{ sheep.$helper.timeFormat(item.createTime, 'yyyy-mm-dd hh:MM:ss') }}
+              </text>
+              <button
+                v-if="item.status === 10 && item.type === 5 && item.payTransferId > 0"
+                class="ss-reset-button confirm-btn ss-m-l-20"
+                @tap="onRequestMerchantTransfer(item)"
+              >
+                确认收款
+              </button>
+              <text v-else class="status" :class="'status-' + item.status">{{
+                item.statusName
+              }}</text>
+            </view>
+          </view>
         </view>
       </view>
     </view>
@@ -150,10 +190,11 @@
   import { onLoad, onReachBottom } from '@dcloudio/uni-app';
   import sheep from '@/sheep';
   import dayjs from 'dayjs';
-  import _ from 'lodash-es';
+  import { concat } from 'lodash-es';
   import BrokerageApi from '@/sheep/api/trade/brokerage';
   import { fen2yuan } from '@/sheep/hooks/useGoods';
-  import { resetPagination } from '@/sheep/util';
+  import { resetPagination } from '@/sheep/helper/utils';
+  import PayTransferApi from '@/sheep/api/pay/transfer';
 
   const headerBg = sheep.$url.css('/static/img/shop/user/wallet_card_bg.png');
 
@@ -179,11 +220,11 @@
   const tabMaps = [
     {
       name: '分佣',
-      value: '1', // BrokerageRecordBizTypeEnum.ORDER
+      value: '1',
     },
     {
       name: '提现',
-      value: '2', // BrokerageRecordBizTypeEnum.WITHDRAW
+      value: '2',
     },
   ];
 
@@ -197,17 +238,23 @@
 
   async function getLogList() {
     state.loadStatus = 'loading';
-    let { code, data } = await BrokerageApi.getBrokerageRecordPage({
-      pageSize: state.pagination.pageSize,
-      pageNo: state.pagination.pageNo,
-      bizType: tabMaps[state.currentTab].value,
-      'createTime[0]': state.date[0] + ' 00:00:00',
-      'createTime[1]': state.date[1] + ' 23:59:59',
-    });
+    let { code, data } = await (state.currentTab === 0
+      ? BrokerageApi.getBrokerageRecordPage({
+          pageSize: state.pagination.pageSize,
+          pageNo: state.pagination.pageNo,
+          'createTime[0]': state.date[0] + ' 00:00:00',
+          'createTime[1]': state.date[1] + ' 23:59:59',
+        })
+      : BrokerageApi.getBrokerageWithdrawPage({
+          pageSize: state.pagination.pageSize,
+          pageNo: state.pagination.pageNo,
+          'createTime[0]': state.date[0] + ' 00:00:00',
+          'createTime[1]': state.date[1] + ' 23:59:59',
+        }));
     if (code !== 0) {
       return;
     }
-    state.pagination.list = _.concat(state.pagination.list, data.list);
+    state.pagination.list = concat(state.pagination.list, data.list);
     state.pagination.total = data.total;
     state.loadStatus = state.pagination.list.length < state.pagination.total ? 'more' : 'noMore';
   }
@@ -261,11 +308,65 @@
     state.summary = data;
   }
 
+  // 微信场景下：用户确认收款
+  // 可见 https://pay.weixin.qq.com/doc/v3/merchant/4012716430 文档
+  async function onRequestMerchantTransfer(item) {
+    const requestMerchantTransfer = sheep.$platform.useProvider()
+      ? sheep.$platform.useProvider().requestMerchantTransfer
+      : undefined;
+    if (!requestMerchantTransfer) {
+      sheep.$helper.toast('仅微信平台支持该功能');
+      return;
+    }
+    // 获取提现详情
+    const { code, data } = await BrokerageApi.getBrokerageWithdraw(item.id);
+    if (code !== 0) {
+      return;
+    }
+    if (data.status === 11) {
+      sheep.$helper.toast('该提现单已确认收款');
+      item.status = 11;
+      return;
+    }
+    if (!data.transferChannelMchId || !data.transferChannelPackageInfo) {
+      sheep.$helper.toast('提现信息异常，请稍后再试');
+      return;
+    }
+    // 调用微信确认收款
+    const payTransferId = data.payTransferId;
+    await requestMerchantTransfer(
+      data.transferChannelMchId,
+      data.transferChannelPackageInfo,
+      async (res) => {
+        if (res.result !== 'success') {
+          sheep.$helper.toast(res.errMsg);
+          return;
+        }
+        // 同步转账单状态
+        try {
+          const syncTransferResult = await PayTransferApi.syncTransfer(payTransferId);
+          console.log('syncTransferResult 结果', syncTransferResult);
+        } catch (e) {
+          console.error('syncTransferResult 异常', e);
+        }
+        // 查询提现单最新状态
+        const { data } = await BrokerageApi.getBrokerageWithdraw(item.id);
+        if (data && data.status !== 11) {
+          sheep.$helper.toast('确认收款成功，但数据存在延迟，请以实际【微信支付】到账为准');
+          return;
+        }
+        sheep.$helper.toast('确认收款成功');
+        // 更新到列表中
+        item.status = 11;
+      },
+    );
+  }
+
   onLoad(async (options) => {
     state.today = dayjs().format('YYYY-MM-DD');
     state.date = [state.today, state.today];
-    if (options.type === 2) {
-      // 切换到“提现” tab 下
+    if (options.type === '2') {
+      // 切换到"提现" tab 下
       state.currentTab = 1;
     }
     getLogList();
@@ -476,6 +577,17 @@
         color: $dark-3;
       }
     }
+
+    .confirm-btn {
+      font-size: 22rpx;
+      color: var(--ui-BG-Main);
+      background: rgba(var(--ui-BG-Main-rgb), 0.1);
+      padding: 4rpx 16rpx;
+      margin: 0;
+      line-height: 1.4;
+      border-radius: 20rpx;
+      border: 1px solid var(--ui-BG-Main);
+    }
   }
 
   .model-title {
@@ -513,6 +625,19 @@
       font-size: 30rpx;
       height: 40rpx;
       line-height: normal;
+    }
+  }
+
+  .status {
+    font-size: 22rpx;
+    &.status-0 {
+      color: #ff9900;
+    }
+    &.status-1 {
+      color: #19be6b;
+    }
+    &.status-2 {
+      color: #fa3534;
     }
   }
 </style>

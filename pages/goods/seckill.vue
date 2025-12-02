@@ -137,11 +137,11 @@
 </template>
 
 <script setup>
-  import { reactive, computed, ref, unref } from 'vue';
+  import { computed, reactive, ref, unref } from 'vue';
   import { onLoad, onPageScroll } from '@dcloudio/uni-app';
   import sheep from '@/sheep';
   import { isEmpty, min } from 'lodash-es';
-  import { useDurationTime, formatGoodsSwiper, fen2yuan } from '@/sheep/hooks/useGoods';
+  import { fen2yuan, formatGoodsSwiper, useDurationTime } from '@/sheep/hooks/useGoods';
   import detailNavbar from './components/detail/detail-navbar.vue';
   import detailCellSku from './components/detail/detail-cell-sku.vue';
   import detailTabbar from './components/detail/detail-tabbar.vue';
@@ -151,7 +151,7 @@
   import detailProgress from './components/detail/detail-progress.vue';
   import SeckillApi from '@/sheep/api/promotion/seckill';
   import SpuApi from '@/sheep/api/product/spu';
-  import { getTimeStatusEnum, TimeStatusEnum } from '@/sheep/util/const';
+  import { getTimeStatusEnum, SharePageEnum, TimeStatusEnum } from '@/sheep/helper/const';
 
   const headerBg = sheep.$url.css('/static/img/shop/goods/seckill-bg.png');
   const btnBg = sheep.$url.css('/static/img/shop/goods/seckill-btn.png');
@@ -206,7 +206,7 @@
         title: activity.value.name,
         image: sheep.$url.cdn(state.goodsInfo.picUrl),
         params: {
-          page: '4',
+          page: SharePageEnum.SECKILL.value,
           query: activity.value.id,
         },
       },
@@ -214,8 +214,8 @@
         type: 'goods', // 商品海报
         title: activity.value.name, // 商品标题
         image: sheep.$url.cdn(state.goodsInfo.picUrl), // 商品主图
-        price: state.goodsInfo.price, // 商品价格
-        marketPrice: state.goodsInfo.marketPrice, // 商品原价
+        price: fen2yuan(state.goodsInfo.price), // 商品价格
+        marketPrice: fen2yuan(state.goodsInfo.marketPrice), // 商品原价
       },
     );
   });
@@ -226,6 +226,11 @@
   // 查询活动
   const getActivity = async (id) => {
     const { data } = await SeckillApi.getSeckillActivity(id);
+    if (!data) {
+      state.goodsInfo = null;
+      state.skeletonLoading = false;
+      return;
+    }
     activity.value = data;
     timeStatusEnum.value = getTimeStatusEnum(activity.value.startTime, activity.value.endTime);
     state.percent = 100 - (data.stock / data.totalStock) * 100;
@@ -236,6 +241,11 @@
   // 查询商品
   const getSpu = async (id) => {
     const { data } = await SpuApi.getSpuDetail(id);
+    if (!data) {
+      state.goodsInfo = null;
+      state.skeletonLoading = false;
+      return;
+    }
     data.activity_type = 'seckill';
     state.goodsInfo = data;
     // 处理轮播图
@@ -274,6 +284,7 @@
     // 非法参数
     if (!options.id) {
       state.goodsInfo = null;
+      state.skeletonLoading = false;
       return;
     }
 
